@@ -5,16 +5,23 @@ import com.fitnessApp.ActivityService.dto.ActivityResponse;
 import com.fitnessApp.ActivityService.model.Activity;
 import com.fitnessApp.ActivityService.repository.ActivityRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
+//@AllArgsConstructor
+@RequiredArgsConstructor
 public class ActivityService {
     private final ActivityRepository activityRepository;
     private final ModelMapper modelMapper;
     private final UserValidationService userValidationService;
+    private final KafkaTemplate<String, Activity> kafkaTemplate;
 
+    @Value("${kafka.topic.name}")
+    private String topicName;
 
     public ActivityResponse trackActivity(ActivityRequest request) {
 //        Activity activity=modelMapper.map(request,Activity.class);
@@ -37,7 +44,14 @@ public class ActivityService {
                 .build();
 
         Activity savedActivity = activityRepository.save(activity);
-        return mapToResponse(savedActivity);
+        try{
+            kafkaTemplate.send(topicName,savedActivity.getUserId(),savedActivity);
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+                return mapToResponse(savedActivity);
     }
 
     private ActivityResponse mapToResponse(Activity activity) {
