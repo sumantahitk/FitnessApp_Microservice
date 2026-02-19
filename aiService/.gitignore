@@ -55,4 +55,4 @@ logs/
 node_modules/
 
 # Environment
-.env
+../.env
