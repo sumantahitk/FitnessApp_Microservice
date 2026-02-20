@@ -29,13 +29,25 @@ public class GeminiService {
                 }
         );
 
-        String response=webClient.post()
+//        String response=webClient.post()
+//                .uri(geminiApiUrl)
+//                .header("Content-Type","application/json")
+//                .header("X-goog-api-key",geminiApiKey)
+//                .bodyValue(requestBody)
+//                .retrieve()
+//                .bodyToMono(String.class)
+//                .block();
+        String response = webClient.post()
                 .uri(geminiApiUrl)
                 .header("Content-Type","application/json")
                 .header("X-goog-api-key",geminiApiKey)
                 .bodyValue(requestBody)
                 .retrieve()
+                .onStatus(status -> status.isError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .map(body -> new RuntimeException("Gemini API Error: " + body)))
                 .bodyToMono(String.class)
+                .timeout(java.time.Duration.ofSeconds(15))
                 .block();
 
         return response;
